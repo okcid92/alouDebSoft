@@ -4,7 +4,7 @@ Section: utils
 Priority: optional
 Architecture: all
 Maintainer: Alou Dev dickoalou04@gmail.com
-Depends: bash, coreutils
+Depends: bash, coreutils, python3, python3-gi
 Description: Alou - toolbox de développement (CLI + GUI)
  A lightweight developer toolbox providing shortcuts, automations
  and a simple GUI dashboard. Installs scripts into /usr/local/alou

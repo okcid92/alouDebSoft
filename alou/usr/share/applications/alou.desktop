@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Alou
 Comment=Alou development toolbox
-Exec=alou dashboard
+Exec=alou-gui
 Icon=utilities-terminal
 Terminal=false
 Type=Application

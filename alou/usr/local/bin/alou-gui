@@ -1,0 +1,10 @@
+#!/bin/sh
+# Launcher for Alou GUI
+PY=/usr/bin/python3
+GUI=/usr/local/alou/gui/alou_gui.py
+if [ -x "$PY" ] && [ -f "$GUI" ]; then
+  exec "$PY" "$GUI" "$@"
+else
+  echo "alou-gui: python3 or gui script missing"
+  exit 2
+fi
