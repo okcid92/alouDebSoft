@@ -234,6 +234,7 @@ class AlouWindow(Gtk.Window):
             ('install', 'Install'),
             ('network', 'Network'),
             ('downloads', 'Downloads'),
+            ('tutorial', 'Tutorial'),
             ('settings', 'Settings'),
         ]
 
@@ -271,6 +272,7 @@ class AlouWindow(Gtk.Window):
         self.stack.add_named(self._build_install_page(), 'install')
         self.stack.add_named(self._build_network_page(), 'network')
         self.stack.add_named(self._build_downloads_page(), 'downloads')
+        self.stack.add_named(self._build_tutorial_page(), 'tutorial')
         self.stack.add_named(self._build_settings_page(), 'settings')
 
     def _page_shell(self, title, description):
@@ -566,6 +568,51 @@ class AlouWindow(Gtk.Window):
         page.pack_start(card, False, False, 0)
         return page
 
+    def _build_tutorial_page(self):
+        page = self._page_shell('Tutorial', 'Quick guide to understand how Alou works in a few minutes.')
+
+        intro = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        intro.get_style_context().add_class('card')
+        intro.pack_start(Gtk.Label(label='How to use Alou'), False, False, 0)
+        intro.pack_start(Gtk.Label(label='1. Install the package with the Debian .deb file.'), False, False, 0)
+        intro.pack_start(Gtk.Label(label='2. Open a new terminal to load aliases and shell functions automatically.'), False, False, 0)
+        intro.pack_start(Gtk.Label(label='3. Use the CLI with commands like alou help, alou update, alou clean and alou yt.'), False, False, 0)
+        intro.pack_start(Gtk.Label(label='4. Open Alou Toolbox to use the GUI pages for downloads, cleanup, network and system actions.'), False, False, 0)
+        page.pack_start(intro, False, False, 0)
+
+        flow = Gtk.FlowBox()
+        flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        flow.set_max_children_per_line(2)
+        flow.set_row_spacing(12)
+        flow.set_column_spacing(12)
+
+        steps = [
+            ('CLI', 'alou help shows all available commands and entry points.'),
+            ('Shell', 'Interactive shells load /etc/profile.d/alou.sh automatically.'),
+            ('YouTube', 'Paste a video or playlist link in Downloads and choose the mode.'),
+            ('Cleanup', 'Use Cleanup to remove build artifacts from the current folder.'),
+            ('System', 'Use Actions to refresh packages and run system shortcuts.'),
+            ('GUI', 'The left sidebar switches between pages without extra setup.'),
+        ]
+
+        for title, text in steps:
+            child = Gtk.FlowBoxChild()
+            child.add(self._card(title, None, text))
+            flow.add(child)
+
+        page.pack_start(flow, False, False, 0)
+
+        tips = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        tips.get_style_context().add_class('card')
+        tips.pack_start(Gtk.Label(label='Useful shortcuts'), False, False, 0)
+        tips.pack_start(Gtk.Label(label='- alou dashboard: open the terminal dashboard'), False, False, 0)
+        tips.pack_start(Gtk.Label(label='- alou yt <url>: download a video or playlist from the terminal'), False, False, 0)
+        tips.pack_start(Gtk.Label(label='- mkcd <dir>: create a folder and enter it'), False, False, 0)
+        tips.pack_start(Gtk.Label(label='- help-cmd <name>: locate the source of a command'), False, False, 0)
+        page.pack_start(tips, False, False, 0)
+
+        return page
+
     def _build_settings_page(self):
         page = self._page_shell('Settings', 'Basic runtime preferences for the GUI.')
 
@@ -593,6 +640,18 @@ class AlouWindow(Gtk.Window):
         card.pack_start(row, False, False, 0)
 
         page.pack_start(card, False, False, 0)
+
+        danger = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        danger.get_style_context().add_class('card')
+        danger.pack_start(Gtk.Label(label='Danger zone'), False, False, 0)
+        danger.pack_start(Gtk.Label(label='Remove Alou from the system. This will uninstall the package using the package manager.'), False, False, 0)
+
+        danger_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        danger_row.pack_start(self._action_button('Uninstall Alou', self.on_uninstall_clicked, 'danger-button'), False, False, 0)
+        danger_row.pack_start(self._action_button('Open tutorial', self.on_tutorial_clicked), False, False, 0)
+        danger.pack_start(danger_row, False, False, 0)
+
+        page.pack_start(danger, False, False, 0)
         return page
 
     def _set_page(self, page_id):
@@ -796,6 +855,34 @@ class AlouWindow(Gtk.Window):
     def on_ping_clicked(self, widget):
         self._append_log('GUI is responsive and ready')
         self._set_status('Test log written')
+
+    def on_tutorial_clicked(self, widget):
+        self._set_page('tutorial')
+        self._set_status('Opened tutorial')
+
+    def on_uninstall_clicked(self, widget):
+        dialog = Gtk.MessageDialog(
+            parent=self,
+            flags=0,
+            type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+            message_format='Uninstall Alou?',
+        )
+        dialog.format_secondary_text(
+            'This will remove the Alou package from the system. Make sure you really want to continue.'
+        )
+        response = dialog.run()
+        dialog.destroy()
+
+        if response != Gtk.ResponseType.OK:
+            self._append_log('Uninstall cancelled')
+            self._set_status('Uninstall cancelled')
+            return
+
+        self._run_command(
+            self._privileged_command(['/usr/bin/apt-get', 'purge', '-y', 'alou']),
+            'uninstall alou',
+        )
 
 
 def main():
