@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+echo "[alou] prerm: package will be removed"
+exit 0

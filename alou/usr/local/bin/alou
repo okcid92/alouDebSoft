@@ -1,0 +1,12 @@
+#!/bin/sh
+# Global CLI wrapper installed at /usr/local/bin/alou
+
+ALOU_DIR=/usr/local/alou
+if [ -f "$ALOU_DIR/core.sh" ]; then
+  # shellcheck source=/dev/null
+  . "$ALOU_DIR/core.sh"
+  alou_main "$@"
+else
+  echo "alou: core non trouvé dans $ALOU_DIR"
+  exit 2
+fi

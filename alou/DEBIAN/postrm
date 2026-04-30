@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+case "$1" in
+  remove|purge)
+    echo "[alou] Removing installed files..."
+    rm -rf /usr/local/alou || true
+    rm -f /usr/local/bin/alou || true
+    rm -f /etc/profile.d/alou.sh || true
+    rm -f /usr/share/applications/alou.desktop || true
+    ;;
+  *) ;;
+esac
+exit 0
