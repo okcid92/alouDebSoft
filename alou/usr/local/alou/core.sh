@@ -22,6 +22,7 @@ alou_main() {
   case "$cmd" in
     help|--help|-h|"") _alou_help ;;
     maj) . "$ALOU_DIR"/system.sh && maj "$@" ;;
+    update) . "$ALOU_DIR"/system.sh && maj "$@" ;;
     clean) . "$ALOU_DIR"/cleanup.sh && cleanup "$@" ;;
     gitp) . "$ALOU_DIR"/git.sh && gitp "$@" ;;
     gita) . "$ALOU_DIR"/git.sh && gita "$@" ;;

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Global CLI wrapper installed at /usr/local/bin/alou
 
 ALOU_DIR=/usr/local/alou

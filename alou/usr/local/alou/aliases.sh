@@ -31,3 +31,22 @@ alias gp="git pull"
 alias zshconfig="nano ~/.zshrc"
 
 # Note: functions/aliases are loaded into interactive shells via /etc/profile.d/alou.sh
+
+# Utility: create directory and cd into it
+mkcd() {
+	if [ -z "$1" ]; then
+		echo "Usage: mkcd <dir>"; return 1
+	fi
+	mkdir -p "$1" && cd "$1" || return 1
+}
+
+# Show source for an alias/function by scanning /usr/local/alou/*.sh
+help-cmd() {
+	name="$1"
+	if [ -z "$name" ]; then
+		echo "Usage: help-cmd <name>"; return 1
+	fi
+	echo "Searching source for '$name' in /usr/local/alou/*.sh..."
+	grep -nH -E "^[[:space:]]*(alias[[:space:]]+$name=|function[[:space:]]+$name\b|^$name\s*\()" /usr/local/alou/*.sh || \
+		echo "Source not found in /usr/local/alou; try 'type $name' in your shell"
+}

@@ -6,7 +6,7 @@ echo "[alou] postinst: starting"
 # Ensure apt-get is available and update
 if command -v apt-get >/dev/null 2>&1; then
   echo "[alou] Running apt-get update..."
-  apt-get update -y || true
+  apt-get update || true
 
   deps=(git curl zsh yt-dlp aria2 nmap lsd bat pv unzip p7zip-full unrar-free zenity python3 python3-gi)
   echo "[alou] Installing dependencies: ${deps[*]}"
