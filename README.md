@@ -44,7 +44,8 @@ Après l’installation, ouvre un nouveau terminal pour charger automatiquement 
 ```sh
 alou help
 alou update
-alou clean
+alou clean --dry-run all
+alou clean node
 alou gitp "message de commit"
 alou gita "message de commit local"
 alou yt <url>
@@ -65,6 +66,16 @@ Une fois le terminal relancé, les modules chargent automatiquement des commande
 - `ext`
 - `help-cmd`
 
+### Garde-fous
+
+Les commandes destructrices demandent confirmation par défaut :
+
+- `alou clean node|python|laravel|all` affiche une confirmation avant suppression.
+- `alou clean --dry-run all` affiche les dossiers qui seraient supprimés.
+- `alou clean --yes all` permet une exécution automatisée.
+- `alou gitp` et `alou gita` affichent `git status --short` avant `git add -A`.
+- `alou gitp --yes "msg"` et `alou gita --yes "msg"` désactivent la confirmation.
+
 ### GUI
 
 Lancer l’interface graphique :
@@ -73,7 +84,7 @@ Lancer l’interface graphique :
 alou-gui
 ```
 
-La GUI affiche une barre latérale, une zone principale et un journal d’actions. Elle sert de tableau de bord rapide pour certaines opérations courantes.
+La GUI affiche une barre latérale, une zone principale et un journal d’actions. Elle sert de tableau de bord rapide pour les actions système, le nettoyage, l’installation de paquets, le réseau, les téléchargements YouTube, un tutoriel et les réglages.
 
 ## Dépendances
 
@@ -87,6 +98,13 @@ Alou s’appuie sur plusieurs outils système, notamment :
 - `nmap`
 - `lsd`
 - `bat`
+- `unzip`
+- `p7zip-full`
+- `unrar-free`
+- `python3-gi`
+- `gir1.2-gtk-3.0`
+
+Ces dépendances sont déclarées dans le fichier Debian `control`. Le script `postinst` ne lance pas d’installation silencieuse avec `apt-get install`.
 
 ## Désinstallation
 
@@ -106,4 +124,6 @@ sudo apt purge alou
 
 - Le chargement automatique fonctionne pour les shells interactifs.
 - Aucun changement manuel dans `~/.bashrc` ou `~/.zshrc` n’est requis.
+- Le dashboard automatique est désactivé par défaut. Pour l’activer : `export ALOU_SHOW_DASHBOARD=1`.
+- Le helper `command_not_found` est désactivé par défaut. Pour l’activer : `export ALOU_COMMAND_NOT_FOUND=1`.
 - Le projet est pensé pour une installation simple via `.deb` et une utilisation immédiate.

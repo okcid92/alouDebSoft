@@ -363,6 +363,19 @@ class AlouWindow(Gtk.Window):
         dialog.destroy()
         return chosen
 
+    def _confirm(self, title, detail):
+        dialog = Gtk.MessageDialog(
+            parent=self,
+            flags=0,
+            type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+            message_format=title,
+        )
+        dialog.format_secondary_text(detail)
+        response = dialog.run()
+        dialog.destroy()
+        return response == Gtk.ResponseType.OK
+
     def _build_dashboard_page(self):
         page = self._page_shell('Dashboard', 'Overview of the system and quick access to the most common actions.')
 
@@ -752,19 +765,26 @@ class AlouWindow(Gtk.Window):
         mode = self.cleanup_combo.get_active_text() if hasattr(self, 'cleanup_combo') else 'node_modules'
         if not target:
             target = os.getcwd()
+        if not os.path.isdir(target):
+            self._append_log(f'Cleanup target does not exist: {target}')
+            self._set_status('Cleanup target missing')
+            return
 
-        if mode == 'all':
-            script = 'find . \\( -type d -name node_modules -o -name vendor -o -name __pycache__ -o -name .venv -o -name target \\) -prune -exec rm -rf "{}" +'
-        elif mode == 'node_modules':
-            script = 'find . -type d -name node_modules -prune -exec rm -rf "{}" +'
-        elif mode == '__pycache__':
-            script = 'find . -type d -name __pycache__ -exec rm -rf "{}" +'
-        elif mode == '.venv':
-            script = 'find . -type d -name .venv -prune -exec rm -rf "{}" +'
-        else:
-            script = 'find . -type d -name vendor -prune -exec rm -rf "{}" +'
+        if not self._confirm('Run cleanup?', f'Remove {mode} artifacts from:\n{target}'):
+            self._append_log('Cleanup cancelled')
+            self._set_status('Cleanup cancelled')
+            return
 
-        self._run_command(['/bin/sh', '-lc', script], f'cleanup {mode}', cwd=target)
+        mode_map = {
+            'node_modules': 'node',
+            '__pycache__': 'python',
+            '.venv': 'python',
+            'vendor': 'laravel',
+            'all': 'all',
+        }
+        cli_mode = mode_map.get(mode, 'node')
+        alou_cmd = '/usr/local/bin/alou' if os.path.exists('/usr/local/bin/alou') else 'alou'
+        self._run_command([alou_cmd, 'clean', '--yes', cli_mode], f'cleanup {mode}', cwd=target)
 
     def on_install_clicked(self, widget):
         package = self.install_entry.get_text().strip()
@@ -861,20 +881,10 @@ class AlouWindow(Gtk.Window):
         self._set_status('Opened tutorial')
 
     def on_uninstall_clicked(self, widget):
-        dialog = Gtk.MessageDialog(
-            parent=self,
-            flags=0,
-            type=Gtk.MessageType.WARNING,
-            buttons=Gtk.ButtonsType.OK_CANCEL,
-            message_format='Uninstall Alou?',
-        )
-        dialog.format_secondary_text(
-            'This will remove the Alou package from the system. Make sure you really want to continue.'
-        )
-        response = dialog.run()
-        dialog.destroy()
-
-        if response != Gtk.ResponseType.OK:
+        if not self._confirm(
+            'Uninstall Alou?',
+            'This will remove the Alou package from the system. Make sure you really want to continue.',
+        ):
             self._append_log('Uninstall cancelled')
             self._set_status('Uninstall cancelled')
             return

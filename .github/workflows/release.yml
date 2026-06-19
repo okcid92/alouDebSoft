@@ -1,99 +1,72 @@
 # .github/workflows/release.yml
 
-name: Release on Push to Main
+name: Build and Release Alou
 
 on:
   push:
     branches:
       - main
+  pull_request:
 
 permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build and Release .deb
+  build:
+    name: Validate and build .deb
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Get short SHA
-        id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Install validation tools
+        run: sudo apt-get update && sudo apt-get install -y shellcheck python3
 
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+      - name: Lint shell scripts
+        run: shellcheck alou/usr/local/bin/alou alou/usr/local/bin/alou-gui alou/usr/local/alou/*.sh alou/etc/profile.d/alou.sh alou/DEBIAN/postinst alou/DEBIAN/prerm alou/DEBIAN/postrm alou/build_deb.sh
 
-      - name: Get commit message
-        id: commit
-        run: echo "message=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
+      - name: Compile GUI
+        run: python3 -m py_compile alou/usr/local/alou/gui/alou_gui.py
 
-      - name: Build .deb package
+      - name: Build package
+        id: package
+        working-directory: alou
         run: |
-          APP_NAME="alouDebSoft"
-          VERSION="1.0.${{ steps.date.outputs.date }}"
+          ./build_deb.sh
+          version="$(awk '/^Version:/{print $2}' DEBIAN/control)"
+          mv ../alou.deb "../alou_${version}_all.deb"
+          echo "deb_name=alou_${version}_all.deb" >> "$GITHUB_OUTPUT"
 
-          # Arborescence du paquet .deb
-          mkdir -p pkg/DEBIAN
-          mkdir -p pkg/usr/bin
-          mkdir -p pkg/usr/share/$APP_NAME
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.deb_name }}
+          path: ${{ steps.package.outputs.deb_name }}
 
-          # Copie des fichiers du projet
-          cp -r * pkg/usr/share/$APP_NAME/ 2>/dev/null || true
+  release:
+    name: Release .deb
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-          # Fichier de contrôle du paquet
-          cat << EOF > pkg/DEBIAN/control
-          Package: $APP_NAME
-          Version: $VERSION
-          Section: utils
-          Priority: optional
-          Architecture: amd64
-          Maintainer: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          Description: $APP_NAME - built from commit ${{ steps.vars.outputs.sha_short }}
-          EOF
+    steps:
+      - name: Download package artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
-          # Build du .deb
-          dpkg-deb --build pkg "${APP_NAME}_${VERSION}.deb"
-
-          echo "deb_name=${APP_NAME}_${VERSION}.deb" >> $GITHUB_OUTPUT
-        id: build
-
-      - name: Create and push tag
+      - name: Compute release metadata
+        id: meta
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag "release-${{ steps.date.outputs.date }}"
-          git push origin "release-${{ steps.date.outputs.date }}"
+          deb="$(find dist -name 'alou_*_all.deb' -print -quit)"
+          version="$(basename "$deb" | sed -E 's/^alou_([^_]+)_all\.deb$/\1/')"
+          echo "deb=$deb" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: "release-${{ steps.date.outputs.date }}"
-          release_name: "Release ${{ steps.date.outputs.date }}"
-          body: |
-            ## Release ${{ steps.date.outputs.date }}
-
-            - **Commit:** ${{ steps.vars.outputs.sha_short }}
-            - **Date:** ${{ steps.date.outputs.date }}
-            - **Author:** ${{ github.actor }}
-            - **Message:** ${{ steps.commit.outputs.message }}
-          draft: false
-          prerelease: false
-
-      - name: Upload .deb to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ steps.build.outputs.deb_name }}
-          asset_name: ${{ steps.build.outputs.deb_name }}
-          asset_content_type: application/vnd.debian.binary-package
+          tag_name: ${{ steps.meta.outputs.tag }}
+          files: ${{ steps.meta.outputs.deb }}

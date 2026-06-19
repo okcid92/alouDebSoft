@@ -1,9 +1,24 @@
 #!/bin/sh
-# Alou aliases
+# Alou aliases and small interactive helpers
 
-alias cat='batcat --paging=never 2>/dev/null || cat'
-alias ls='lsd 2>/dev/null || ls'
-alias reload="[ -f ~/.zshrc ] && source ~/.zshrc || true"
+cat() {
+	if command -v batcat >/dev/null 2>&1; then
+		batcat --paging=never "$@"
+	elif command -v bat >/dev/null 2>&1; then
+		bat --paging=never "$@"
+	else
+		command cat "$@"
+	fi
+}
+
+ls() {
+	if command -v lsd >/dev/null 2>&1; then
+		lsd "$@"
+	else
+		command ls "$@"
+	fi
+}
+alias reload='[ -f ~/.zshrc ] && . ~/.zshrc || true'
 
 alias inst='sudo apt update && sudo apt install'
 alias dinst='sudo apt remove'

@@ -8,9 +8,10 @@ _alou_help() {
 Alou - commandes disponibles:
   alou help                Affiche cette aide
   alou maj                 Mise à jour système + environnements (basique)
-  alou clean [type]        Nettoyage: node, python, laravel, all
-  alou gitp [msg]          git add/commit/push
-  alou gita [msg]          git add/commit (local)
+  alou clean [opts] [type] Nettoyage: node, python, laravel, all
+                           opts: --dry-run, --yes
+  alou gitp [--yes] [msg]  git add/commit/push avec confirmation
+  alou gita [--yes] [msg]  git add/commit local avec confirmation
   alou ext <archive>       Extraction universelle
   alou yt <url>            Téléchargement YouTube via yt-dlp
   alou dashboard           Affiche le dashboard terminal
@@ -21,19 +22,22 @@ alou_main() {
   cmd="$1"; shift || true
   case "$cmd" in
     help|--help|-h|"") _alou_help ;;
-    maj) . "$ALOU_DIR"/system.sh && maj "$@" ;;
-    update) . "$ALOU_DIR"/system.sh && maj "$@" ;;
-    clean) . "$ALOU_DIR"/cleanup.sh && cleanup "$@" ;;
-    gitp) . "$ALOU_DIR"/git.sh && gitp "$@" ;;
-    gita) . "$ALOU_DIR"/git.sh && gita "$@" ;;
-    ext) . "$ALOU_DIR"/media.sh && ext "$@" ;;
-    yt) . "$ALOU_DIR"/media.sh && yt "$@" ;;
-    dashboard) . "$ALOU_DIR"/dashboard.sh && _dashboard ;;
+    # shellcheck source=/dev/null
+    maj) . "$ALOU_DIR/system.sh" && maj "$@" ;;
+    # shellcheck source=/dev/null
+    update) . "$ALOU_DIR/system.sh" && maj "$@" ;;
+    # shellcheck source=/dev/null
+    clean) . "$ALOU_DIR/cleanup.sh" && cleanup "$@" ;;
+    # shellcheck source=/dev/null
+    gitp) . "$ALOU_DIR/git.sh" && gitp "$@" ;;
+    # shellcheck source=/dev/null
+    gita) . "$ALOU_DIR/git.sh" && gita "$@" ;;
+    # shellcheck source=/dev/null
+    ext) . "$ALOU_DIR/media.sh" && ext "$@" ;;
+    # shellcheck source=/dev/null
+    yt) . "$ALOU_DIR/media.sh" && yt "$@" ;;
+    # shellcheck source=/dev/null
+    dashboard) . "$ALOU_DIR/dashboard.sh" && _dashboard ;;
     *) echo "Alou: commande inconnue '$cmd'"; _alou_help; exit 2 ;;
   esac
 }
-
-if [ "${BASH_SOURCE:-}" = "" ]; then
-  # when sourced nothing to do
-  :
-fi

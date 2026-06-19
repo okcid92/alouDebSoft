@@ -8,17 +8,16 @@ _dashboard() {
   disk_info="$(df -h / | awk 'NR==2{print $5 " used (" $4 " available)"}')"
 
   # colors if supported
-  GREEN="\033[32m"; YELLOW="\033[33m"; RED="\033[31m"; RESET="\033[0m"
+  GREEN="$(printf '\033[32m')"; RESET="$(printf '\033[0m')"
 
-  echo
-  echo "${GREEN}Alou Dashboard${RESET} - $user@$host"
-  echo "RAM: $free_info"
-  echo "Disk: $disk_info"
-  echo
+  printf '\n%sAlou Dashboard%s - %s@%s\n' "$GREEN" "$RESET" "$user" "$host"
+  printf 'RAM: %s\n' "$free_info"
+  printf 'Disk: %s\n\n' "$disk_info"
 }
 
-# Run dashboard automatically for interactive shells
+# Optional automatic dashboard for interactive shells.
+# Enable explicitly with: export ALOU_SHOW_DASHBOARD=1
 case "$-" in
-  *i*) _dashboard ;;
+  *i*) [ "${ALOU_SHOW_DASHBOARD:-0}" = "1" ] && _dashboard ;;
   *) ;;
 esac
